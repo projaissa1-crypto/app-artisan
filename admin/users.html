@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المستخدمين - منصة الحرفيين</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🛠️ منصة الحرفيين</h2>
+            </div>
+            <nav class="menu">
+                <a href="dashboard.html" class="menu-item">
+                    <span>📊</span> الرئيسية
+                </a>
+                <a href="categories.html" class="menu-item">
+                    <span>📁</span> الفئات
+                </a>
+                <a href="materials.html" class="menu-item">
+                    <span>📦</span> المواد
+                </a>
+                <a href="users.html" class="menu-item active">
+                    <span>👥</span> المستخدمين
+                </a>
+            </nav>
+            <button class="logout-btn" onclick="logout()">
+                <span>🚪</span> تسجيل الخروج
+            </button>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h1>إدارة المستخدمين</h1>
+            </header>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الرقم</th>
+                            <th>الاسم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>الدور</th>
+                            <th>تاريخ التسجيل</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">جاري التحميل...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const API_URL = 'https://app-artisan.onrender.com/api';
+        let users = [];
+
+        async function loadUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                users = await response.json();
+                renderUsers();
+            } catch (error) {
+                showError('فشل تحميل المستخدمين');
+            }
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('usersBody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا يوجد مستخدمين</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map((user, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${getRoleText(user.role)}</td>
+                    <td>${formatDate(user.created_at)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getRoleText(role) {
+            const roles = {
+                'admin': 'مدير',
+                'artisan': 'حرفي',
+                'client': 'عميل'
+            };
+            return roles[role] || role;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ar-SA');
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>
