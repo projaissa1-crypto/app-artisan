@@ -49,6 +49,7 @@ function showSuccess(message) {
 }
 
 // Check auth on page load
-if (window.location.pathname !== '/index.html' && !window.location.pathname.endsWith('index.html')) {
+const currentPage = window.location.pathname.toLowerCase();
+if (!currentPage.includes('index.html') && !currentPage.includes('setup.html')) {
     checkAuth();
 }
