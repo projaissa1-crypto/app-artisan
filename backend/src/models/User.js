@@ -1,4 +1,4 @@
-import db from '../db/index.js';
+import db from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
 class User {
@@ -8,20 +8,12 @@ class User {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const user = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      email,
-      password: hashedPassword,
-      name,
-      role, // 'admin' or 'artisan'
-      phone: phone || null,
-      specialty: specialty || null, // e.g., 'electrician-residential', 'electrician-commercial', 'electrician-industrial'
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    const result = db.prepare(`
+      INSERT INTO users (email, password, name, role, phone, specialty)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(email, hashedPassword, name, role, phone || null, specialty || null);
     
-    db.data.users.push(user);
-    await db.write();
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
     
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
@@ -29,45 +21,39 @@ class User {
   }
   
   static async findByEmail(email) {
-    return db.data.users.find(u => u.email === email);
+    return db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   }
   
   static async findById(id) {
-    return db.data.users.find(u => u.id === id);
+    return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
   }
   
   static async getAll() {
-    return db.data.users.map(({ password, ...user }) => user);
+    const users = db.prepare('SELECT * FROM users').all();
+    return users.map(({ password, ...user }) => user);
   }
   
   static async update(id, updates) {
-    const index = db.data.users.findIndex(u => u.id === id);
-    if (index === -1) return null;
-    
     // If password is being updated, hash it
     if (updates.password) {
       updates.password = await bcrypt.hash(updates.password, 10);
     }
     
-    db.data.users[index] = {
-      ...db.data.users[index],
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
+    const fields = Object.keys(updates).map(key => `${key} = ?`).join(', ');
+    const values = [...Object.values(updates), id];
     
-    await db.write();
+    db.prepare(`UPDATE users SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...values);
     
-    const { password, ...userWithoutPassword } = db.data.users[index];
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    if (!user) return null;
+    
+    const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
   
   static async delete(id) {
-    const index = db.data.users.findIndex(u => u.id === id);
-    if (index === -1) return false;
-    
-    db.data.users.splice(index, 1);
-    await db.write();
-    return true;
+    const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    return result.changes > 0;
   }
   
   static async comparePassword(plainPassword, hashedPassword) {
