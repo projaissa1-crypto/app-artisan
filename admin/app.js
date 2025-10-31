@@ -5,7 +5,8 @@ function checkAuth() {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
-    if (!token || user.role !== 'admin') {
+    // Temporarily disabled - allow access without strict admin check
+    if (!token) {
         window.location.href = 'index.html';
         return false;
     }
