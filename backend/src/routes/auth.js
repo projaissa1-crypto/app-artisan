@@ -11,7 +11,7 @@ router.post('/register',
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 6 }),
     body('name').notEmpty().trim(),
-    body('role').optional().isIn(['admin', 'artisan'])
+    body('role').optional().isIn(['admin', 'artisan', 'client'])
   ],
   async (req, res) => {
     try {
