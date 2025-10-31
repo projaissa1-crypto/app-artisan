@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - منصة الحرفيين</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🛠️ منصة الحرفيين</h2>
+            </div>
+            <nav class="menu">
+                <a href="dashboard.html" class="menu-item active">
+                    <span>📊</span> الرئيسية
+                </a>
+                <a href="categories.html" class="menu-item">
+                    <span>📁</span> الفئات
+                </a>
+                <a href="materials.html" class="menu-item">
+                    <span>📦</span> المواد
+                </a>
+                <a href="users.html" class="menu-item">
+                    <span>👥</span> المستخدمين
+                </a>
+                <a href="projects.html" class="menu-item">
+                    <span>🏗️</span> المشاريع
+                </a>
+            </nav>
+            <button class="logout-btn" onclick="logout()">
+                <span>🚪</span> تسجيل الخروج
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1>مرحباً، <span id="userName">المدير</span></h1>
+                <div class="date" id="currentDate"></div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3 id="usersCount">0</h3>
+                        <p>المستخدمين</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📁</div>
+                    <div class="stat-info">
+                        <h3 id="categoriesCount">0</h3>
+                        <p>الفئات</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-info">
+                        <h3 id="materialsCount">0</h3>
+                        <p>المواد</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏗️</div>
+                    <div class="stat-info">
+                        <h3 id="projectsCount">0</h3>
+                        <p>المشاريع</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2>إجراءات سريعة</h2>
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="window.location.href='categories.html'">
+                        <span>➕</span> إضافة فئة جديدة
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='materials.html'">
+                        <span>➕</span> إضافة مادة جديدة
+                    </button>
+                    <button class="action-btn" onclick="seedDatabase()">
+                        <span>🌱</span> إضافة بيانات تجريبية
+                    </button>
+                    <button class="action-btn" onclick="window.location.href='users.html'">
+                        <span>👁️</span> عرض المستخدمين
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Load stats
+        async function loadStats() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                // Load users count
+                const usersRes = await fetch(`${API_URL}/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const users = await usersRes.json();
+                document.getElementById('usersCount').textContent = users.length || 0;
+
+                // Load categories count
+                const categoriesRes = await fetch(`${API_URL}/categories`);
+                const categories = await categoriesRes.json();
+                document.getElementById('categoriesCount').textContent = categories.length || 0;
+
+                // Load materials count
+                const materialsRes = await fetch(`${API_URL}/materials`);
+                const materials = await materialsRes.json();
+                document.getElementById('materialsCount').textContent = materials.length || 0;
+
+                // Load projects count
+                const projectsRes = await fetch(`${API_URL}/projects`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const projects = await projectsRes.json();
+                document.getElementById('projectsCount').textContent = projects.length || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function seedDatabase() {
+            if (!confirm('هل تريد إضافة البيانات التجريبية؟')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/seed-temp`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('تم إضافة البيانات بنجاح!');
+                    loadStats();
+                } else {
+                    alert('فشل إضافة البيانات');
+                }
+            } catch (error) {
+                alert('خطأ في الاتصال');
+            }
+        }
+
+        // Load stats on page load
+        loadStats();
+
+        // Update date
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('ar-SA', dateOptions);
+
+        // Update user name
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('userName').textContent = user.name || 'المدير';
+    </script>
+</body>
+</html>

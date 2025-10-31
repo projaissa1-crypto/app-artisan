@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الفئات - منصة الحرفيين</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🛠️ منصة الحرفيين</h2>
+            </div>
+            <nav class="menu">
+                <a href="dashboard.html" class="menu-item">
+                    <span>📊</span> الرئيسية
+                </a>
+                <a href="categories.html" class="menu-item active">
+                    <span>📁</span> الفئات
+                </a>
+                <a href="materials.html" class="menu-item">
+                    <span>📦</span> المواد
+                </a>
+                <a href="users.html" class="menu-item">
+                    <span>👥</span> المستخدمين
+                </a>
+                <a href="projects.html" class="menu-item">
+                    <span>🏗️</span> المشاريع
+                </a>
+            </nav>
+            <button class="logout-btn" onclick="logout()">
+                <span>🚪</span> تسجيل الخروج
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1>إدارة الفئات</h1>
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    ➕ إضافة فئة جديدة
+                </button>
+            </header>
+
+            <div class="table-container">
+                <table id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>الرقم</th>
+                            <th>الاسم</th>
+                            <th>الوصف</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center;">جاري التحميل...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">إضافة فئة جديدة</h2>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label>اسم الفئة</label>
+                    <input type="text" id="categoryName" required>
+                </div>
+                <div class="form-group">
+                    <label>الوصف</label>
+                    <textarea id="categoryDescription" rows="4"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let categories = [];
+        let editingId = null;
+
+        // Load categories
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_URL}/categories`);
+                categories = await response.json();
+                renderCategories();
+            } catch (error) {
+                showError('فشل تحميل الفئات');
+            }
+        }
+
+        // Render categories
+        function renderCategories() {
+            const tbody = document.getElementById('categoriesBody');
+            
+            if (categories.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">لا توجد فئات</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = categories.map((cat, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${cat.name}</td>
+                    <td>${cat.description || '-'}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="editCategory(${cat.id})">تعديل</button>
+                        <button class="btn btn-delete" onclick="deleteCategory(${cat.id})">حذف</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Show add modal
+        function showAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'إضافة فئة جديدة';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('categoryDescription').value = '';
+            document.getElementById('categoryModal').classList.add('active');
+        }
+
+        // Edit category
+        function editCategory(id) {
+            const category = categories.find(c => c.id === id);
+            if (!category) return;
+
+            editingId = id;
+            document.getElementById('modalTitle').textContent = 'تعديل الفئة';
+            document.getElementById('categoryName').value = category.name;
+            document.getElementById('categoryDescription').value = category.description || '';
+            document.getElementById('categoryModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+        }
+
+        // Submit form
+        document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                name: document.getElementById('categoryName').value,
+                description: document.getElementById('categoryDescription').value
+            };
+
+            try {
+                const url = editingId 
+                    ? `${API_URL}/categories/${editingId}` 
+                    : `${API_URL}/categories`;
+                
+                const method = editingId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: getHeaders(),
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    showSuccess(editingId ? 'تم تحديث الفئة' : 'تم إضافة الفئة');
+                    closeModal();
+                    loadCategories();
+                } else {
+                    showError('فشلت العملية');
+                }
+            } catch (error) {
+                showError('خطأ في الاتصال');
+            }
+        });
+
+        // Delete category
+        async function deleteCategory(id) {
+            if (!confirm('هل تريد حذف هذه الفئة؟')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/categories/${id}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+
+                if (response.ok) {
+                    showSuccess('تم حذف الفئة');
+                    loadCategories();
+                } else {
+                    showError('فشل الحذف');
+                }
+            } catch (error) {
+                showError('خطأ في الاتصال');
+            }
+        }
+
+        // Load on page load
+        loadCategories();
+    </script>
+</body>
+</html>
