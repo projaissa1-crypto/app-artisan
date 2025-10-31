@@ -8,6 +8,7 @@ import materialRoutes from './routes/materials.js';
 import projectRoutes from './routes/projects.js';
 import specialtyRoutes from './routes/specialties.js';
 import seedRoutes from './routes/seed.js';
+import seedTempRoutes from './routes/seed-temp.js';
 import { errorHandler} from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -32,6 +33,7 @@ app.use('/api/materials', materialRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/specialties', specialtyRoutes);
 app.use('/api', seedRoutes);
+app.use('/api', seedTempRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
