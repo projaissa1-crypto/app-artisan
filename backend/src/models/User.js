@@ -3,21 +3,42 @@ import bcrypt from 'bcryptjs';
 
 class User {
   static async create(userData) {
-    const { email, password, name, role = 'artisan', phone, specialty } = userData;
+    const { email, password, name, role = 'artisan', phone, specialties } = userData;
     
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = db.prepare(`
-      INSERT INTO users (email, password, name, role, phone, specialty)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(email, hashedPassword, name, role, phone || null, specialty || null);
+      INSERT INTO users (email, password, name, role, phone)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(email, hashedPassword, name, role, phone || null);
     
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const userId = result.lastInsertRowid;
+    
+    // Add specialties
+    if (specialties && Array.isArray(specialties)) {
+      const insertSpecialty = db.prepare('INSERT INTO user_specialties (user_id, specialty_id) VALUES (?, ?)');
+      for (const specialtyId of specialties) {
+        try {
+          insertSpecialty.run(userId, specialtyId);
+        } catch (e) {
+          console.log(`Specialty ${specialtyId} already added`);
+        }
+      }
+    }
+    
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    
+    // Get user specialties
+    const userSpecialties = db.prepare(`
+      SELECT s.* FROM specialties s
+      JOIN user_specialties us ON s.id = us.specialty_id
+      WHERE us.user_id = ?
+    `).all(userId);
     
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return { ...userWithoutPassword, specialties: userSpecialties };
   }
   
   static async findByEmail(email) {

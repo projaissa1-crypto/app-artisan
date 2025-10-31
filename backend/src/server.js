@@ -6,8 +6,9 @@ import userRoutes from './routes/users.js';
 import categoryRoutes from './routes/categories.js';
 import materialRoutes from './routes/materials.js';
 import projectRoutes from './routes/projects.js';
+import specialtyRoutes from './routes/specialties.js';
 import seedRoutes from './routes/seed.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { errorHandler} from './middleware/errorHandler.js';
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/specialties', specialtyRoutes);
 app.use('/api', seedRoutes);
 
 // Health check

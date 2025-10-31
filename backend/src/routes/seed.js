@@ -7,13 +7,42 @@ router.post('/seed', async (req, res) => {
   try {
     console.log('🌱 Seeding database...');
 
+    // Create specialties first
+    const specialties = [
+      { name: 'كهرباء', description: 'أعمال الكهرباء والتركيبات الكهربائية', icon: 'electric_bolt' },
+      { name: 'سباكة', description: 'أعمال السباكة والصرف الصحي', icon: 'plumbing' },
+      { name: 'نجارة', description: 'أعمال النجارة والخشب', icon: 'carpenter' },
+      { name: 'حدادة', description: 'أعمال الحديد والمعادن', icon: 'construction' },
+      { name: 'دهان', description: 'أعمال الدهان والديكور', icon: 'format_paint' },
+      { name: 'بناء', description: 'أعمال البناء والتشييد', icon: 'foundation' },
+    ];
+
+    let addedSpecialties = 0;
+    const specialtyIds = {};
+    
+    for (const spec of specialties) {
+      try {
+        const result = db.prepare(
+          'INSERT INTO specialties (name, description, icon) VALUES (?, ?, ?)'
+        ).run(spec.name, spec.description, spec.icon);
+        specialtyIds[spec.name] = result.lastInsertRowid;
+        addedSpecialties++;
+      } catch (e) {
+        // Get existing specialty ID
+        const existing = db.prepare('SELECT id FROM specialties WHERE name = ?').get(spec.name);
+        if (existing) specialtyIds[spec.name] = existing.id;
+        console.log(`Specialty ${spec.name} already exists`);
+      }
+    }
+
     // Check if already seeded
     const existingCategories = db.prepare('SELECT COUNT(*) as count FROM categories').get();
-    if (existingCategories.count > 0) {
+    if (existingCategories.count > 0 && addedSpecialties === 0) {
       return res.json({ 
         success: true, 
         message: 'البيانات موجودة بالفعل',
         data: {
+          specialties: db.prepare('SELECT COUNT(*) as count FROM specialties').get().count,
           categories: existingCategories.count,
           materials: db.prepare('SELECT COUNT(*) as count FROM materials').get().count
         }
@@ -68,6 +97,7 @@ router.post('/seed', async (req, res) => {
       success: true, 
       message: 'تم إضافة البيانات التجريبية بنجاح',
       data: {
+        specialties: addedSpecialties,
         categories: addedCategories,
         materials: addedMaterials
       }

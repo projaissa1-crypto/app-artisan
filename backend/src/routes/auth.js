@@ -20,7 +20,7 @@ router.post('/register',
         return res.status(400).json({ errors: errors.array() });
       }
       
-      const { email, password, name, role, phone, specialty } = req.body;
+      const { email, password, name, role, phone, specialties } = req.body;
       
       // Check if user exists
       const existingUser = await User.findByEmail(email);
@@ -29,7 +29,7 @@ router.post('/register',
       }
       
       // Create user
-      const user = await User.create({ email, password, name, role, phone, specialty });
+      const user = await User.create({ email, password, name, role, phone, specialties });
       
       // Generate token
       const token = jwt.sign(
