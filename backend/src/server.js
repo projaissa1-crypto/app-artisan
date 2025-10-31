@@ -10,6 +10,7 @@ import specialtyRoutes from './routes/specialties.js';
 import seedRoutes from './routes/seed.js';
 import seedTempRoutes from './routes/seed-temp.js';
 import createAdminRoutes from './routes/create-admin.js';
+import createAdminTempRoutes from './routes/create-admin-temp.js';
 import { errorHandler} from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -36,6 +37,7 @@ app.use('/api/specialties', specialtyRoutes);
 app.use('/api', seedRoutes);
 app.use('/api', seedTempRoutes);
 app.use('/api', createAdminRoutes);
+app.use('/api', createAdminTempRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
