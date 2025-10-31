@@ -9,6 +9,7 @@ import projectRoutes from './routes/projects.js';
 import specialtyRoutes from './routes/specialties.js';
 import seedRoutes from './routes/seed.js';
 import seedTempRoutes from './routes/seed-temp.js';
+import createAdminRoutes from './routes/create-admin.js';
 import { errorHandler} from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -34,6 +35,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/specialties', specialtyRoutes);
 app.use('/api', seedRoutes);
 app.use('/api', seedTempRoutes);
+app.use('/api', createAdminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
